@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Bomberos Pedraza - Control Combustible</title>
+  
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bomberos Pedraza">
+  <meta name="msapplication-TileColor" content="#0a0f1d">
+  <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
+  
+  <!-- Librerías -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(-45deg, #0a0f1d, #1a0b12, #0a1d1a, #161f33);
+      background-size: 400% 400%;
+      animation: gradientBG 18s ease infinite;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 30px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    #app { max-width: 480px; margin: 0 auto; padding: 0 16px 80px; }
+
+    /* =========================================================
+       ENCABEZADO INSTITUCIONAL CON LOGOS
+       ========================================================= */
+    .institutional-logos-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: #0a0f1d;
+        border-bottom: 3px solid #dc2626;
+        padding: 10px 12px;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .header-inst-logo {
+        height: 55px;
+        width: auto;
+        max-width: 85px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .left-logo {
+        background: #ffffff;
+        padding: 5px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+
+    .right-logo {
+        background: transparent;
+        padding: 0;
+        filter: drop-shadow(0 0 5px rgba(255,255,255,0.4));
+    }
+
+    .header-inst-text {
+        text-align: center;
+        color: #ffffff;
+        flex: 1;
+        line-height: 1.2;
+    }
+
+    .header-inst-text div {
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .header-inst-text .inst-cuerpo {
+        font-size: 11px;
+        font-weight: 900;
+        color: #fbbf24;
+        letter-spacing: 1px;
+    }
+
+    .header-inst-text .inst-sub {
+        font-size: 7px;
+        color: #94a3b8;
+    }
+
+    @media (max-width: 480px) {
+        .header-inst-logo { height: 45px; max-width: 65px; }
+        .header-inst-text .inst-cuerpo { font-size: 9px; }
+        .header-inst-text div { font-size: 6px; }
+    }
+
+    /* Header de estado debajo del institucional */
+    .header {
+      display: flex;
+      justify-content: flex-end;
+      padding: 5px 0;
+    }
+    .header .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      color: #94a3b8;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .header .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .dot.offline { background: #eab308; }
+
+    /* TÍTULO OFICIAL */
+    .official-title-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 16px 4px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .official-title-section .line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+    }
+    .official-title-section h2 {
+        font-size: 12px;
+        font-weight: 900;
+        color: #fbbf24;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-align: center;
+        white-space: nowrap;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    @media (max-width: 480px) {
+        .official-title-section h2 { font-size: 10px; letter-spacing: 1px; }
+    }
+
+    .nav-tabs {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      z-index: 90;
+      -webkit-backdrop-filter: blur(16px);
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    .nav-tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-tab-btn.active {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .nav-tab-btn:active { transform: scale(0.92); }
+
+    /* Animación de entrada para Tarjetas */
+    .card, .stat-box, .vehicle-item {
+      animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(25px); filter: blur(4px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    .card {
+      background: rgba(22, 31, 51, 0.85);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    /* Botón principal */
+    .btn-fire {
+      background: linear-gradient(135deg, #dc2626, #f59e0b);
+      color: #0a0f1d;
+      font-weight: 900;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 0.1s ease;
+    }
+    .btn-fire:active { transform: scale(0.97); }
+    .btn-fire:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-green {
+      background: #059669;
+      color: #fff;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .btn-green:active { transform: scale(0.97); }
+
+    .vehicle-list {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    .vehicle-item {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: rgba(22,31,51,0.5);
+      cursor: pointer;
+      text-align: center;
+      min-width: 85px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .vehicle-item:hover, .vehicle-item.active {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .vehicle-item.active {
+      border-color: #dc2626;
+      background: rgba(220,38,38,0.2);
+    }
+    .vehicle-item .name { font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .vehicle-item .plate { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .stat-box {
+      background: rgba(15,23,42,0.8);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat-box .label { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+    .stat-box .value { font-size: 14px; font-weight: 900; color: #fff; margin-top: 2px; }
+
+    .log-item {
+      background: rgba(22,31,51,0.6);
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .log-item .info { flex: 1; min-width: 0; }
+    .log-item .date { font-size: 12px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .log-item .details { font-size: 11px; color: #94a3b8; margin-top: 2px; word-wrap: break-word; }
+    .log-item .actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .log-item .actions button {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 6px 8px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .log-item .actions button:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(12px);
+      z-index: 999;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: #161f33;
+      border-radius: 24px 24px 0 0;
+      padding: 24px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      animation: slideUpModal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes slideUpModal {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-content input, .modal-content select, .modal-content textarea {
+      width: 100%;
+      background: #0a0f1d;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      margin-top: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .modal-content input:focus, .modal-content select:focus, .modal-content textarea:focus {
+      outline: none;
+      border-color: #dc2626;
+    }
+    .modal-content label { font-size: 11px; font-weight: 600; color: #94a3b8; }
+    .modal-content .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .image-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .image-preview-container .preview-item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #334155;
+      cursor: pointer;
+    }
+    .image-preview-container .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .image-preview-container .preview-item .remove-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: 90%;
+      max-width: 400px;
+    }
+    .toast {
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #059669; }
+    .toast.error { background: #dc2626; }
+    .toast.warning { background: #d97706; }
+    .toast.info { background: #2563eb; }
+
+    .period-selector {
+      display: flex;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 14px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      gap: 4px;
+    }
+    .period-btn {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .period-btn.active {
+      background: linear-gradient(135deg, #dc2626, #f59e0b);
+      color: #0a0f1d;
+      box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+    }
+    .chart-container-wrapper {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      margin: 16px 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .donut-center-metric {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .donut-center-metric .liters {
+      font-size: 22px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    .donut-center-metric .subtext {
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .unit-progress-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .unit-progress-item > div > div {
+      animation: growBar 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes growBar {
+      from { width: 0 !important; }
+    }
+
+    #pdfRenderArea {
+      position: absolute;
+      top: -99999px;
+      left: -99999px;
+      width: 800px;
+      background: #ffffff;
+      padding: 32px 40px;
+      font-family: 'Times New Roman', Times, serif;
+      color: #000000;
+      line-height: 1.35;
+      font-size: 11pt;
+      box-sizing: border-box;
+      z-index: -99999;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #pdfRenderArea * {
+      font-family: 'Times New Roman', Times, serif !important;
+      font-size: 11pt !important;
+    }
+    #pdfRenderArea .pdf-header {
+      text-align: center;
+      border-bottom: 2px solid #000000;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+    #pdfRenderArea .pdf-header .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 4px;
+    }
+    #pdfRenderArea .pdf-header .logo-img {
+      height: 75px;
+      width: auto;
+      max-width: 85px;
+      object-fit: contain;
+      display: block;
+    }
+    #pdfRenderArea .pdf-header .republic {
+      font-size: 11pt !important;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-header .cuerpo {
+      font-size: 12pt !important;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-header .redan {
+      font-size: 10.5pt !important;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-header .title {
+      font-size: 12pt !important;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-top: 1.5px solid #000000;
+      padding-top: 6px;
+      margin-top: 4px;
+    }
+    #pdfRenderArea .pdf-body .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 20px;
+      background: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+      margin: 6px 0;
+    }
+    #pdfRenderArea .pdf-body .info-grid .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      border-bottom: 1px dashed #d1d5db;
+    }
+    #pdfRenderArea .pdf-body .info-grid .item .label {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-body .info-grid .item .value {
+      font-weight: 700;
+    }
+    #pdfRenderArea .pdf-body .info-grid .full { grid-column: span 2; }
+    #pdfRenderArea .pdf-body .amounts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 6px 0;
+    }
+    #pdfRenderArea .pdf-body .amounts .box {
+      padding: 8px 12px;
+      border-radius: 4px;
+      text-align: center;
+      border: 2px solid #000000;
+      background: #f8fafc;
+    }
+    #pdfRenderArea .pdf-body .amounts .box .label {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-body .amounts .box .value {
+      font-weight: 900;
+      font-size: 13pt !important;
+      margin-top: 2px;
+    }
+    #pdfRenderArea .pdf-body .observation {
+      border: 1px solid #000000;
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin: 6px 0;
+      font-style: italic;
+      background: #ffffff;
+      text-align: justify;
+    }
+    #pdfRenderArea .pdf-body .observation strong {
+      font-style: normal;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    #pdfRenderArea .pdf-body .images-section {
+      margin: 6px 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      border: 1.5px solid #000000;
+      border-radius: 4px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+    #pdfRenderArea .pdf-body .images-section .img-item {
+      text-align: center;
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 4px;
+      border: 1px solid #d1d5db;
+      width: 198px;
+    }
+    #pdfRenderArea .pdf-body .images-section .img-item img {
+      width: 190px;
+      height: 135px;
+      object-fit: cover;
+      border-radius: 3px;
+      display: block;
+      margin: 0 auto;
+    }
+    #pdfRenderArea .pdf-body .images-section .img-item .caption {
+      font-size: 9.5pt !important;
+      margin-top: 3px;
+      text-transform: uppercase;
+      font-weight: 700;
+      text-align: center;
+    }
+    #pdfRenderArea .pdf-footer {
+      border-top: 1.5px solid #000000;
+      margin-top: 8px;
+      padding-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 9.5pt !important;
+    }
+
+    #pdfPreviewOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #pdfPreviewOverlay.active { display: flex; }
+    #pdfPreviewOverlay .pdf-preview-wrapper {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 820px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      -webkit-overflow-scrolling: touch;
+    }
+    #pdfPreviewOverlay .pdf-preview-wrapper .pdf-preview-content {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 11pt;
+      color: #000000;
+      line-height: 1.35;
+      padding: 24px 30px;
+      background: #ffffff;
+    }
+    #pdfPreviewOverlay .pdf-preview-wrapper .pdf-preview-content * {
+      font-family: 'Times New Roman', Times, serif !important;
+    }
+
+    .pdf-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .pdf-actions button {
+      padding: 12px 32px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      border: none;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pdf-actions .btn-close-pdf { background: #dc2626; color: #fff; }
+    .pdf-actions .btn-close-pdf:hover { background: #b91c1c; }
+    .pdf-actions .btn-download-pdf { background: #059669; color: #fff; }
+    .pdf-actions .btn-download-pdf:hover { background: #047857; }
+    .pdf-actions .btn-download-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    #imageZoomModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 20000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #imageZoomModal.open { display: flex; }
+    #imageZoomModal img {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    #imageZoomModal .close-zoom {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #dc2626;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ENCABEZADO INSTITUCIONAL CON LOGOS -->
+<div class="institutional-logos-bar">
+    <!-- Logo DGNB -->
+    <img src="images/dgnb.png" alt="DGNB" class="header-inst-logo left-logo">
+    
+    <!-- Título central -->
+    <div class="header-inst-text">
+        <div>REPÚBLICA BOLIVARIANA DE VENEZUELA</div>
+        <div class="inst-cuerpo">CUERPO DE BOMBEROS MUNICIPIO PEDRAZA</div>
+        <div class="inst-sub">REDAN Los Llanos - ZOEDAN Barinas</div>
+    </div>
+    
+    <!-- Logo Bombero Bolivariano -->
+    <img src="images/logo.png" alt="Bombero Bolivariano" class="header-inst-logo right-logo">
+</div>
+
+<!-- Header de estado -->
+<header class="header" style="justify-content: flex-end; padding: 5px 0;">
+  <div class="status">
+    <span class="dot online" id="statusDot"></span>
+    <span id="statusText">Conectado</span>
+  </div>
+</header>
+
+<!-- TÍTULO OFICIAL -->
+<div class="official-title-section">
+    <div class="line"></div>
+    <h2>Reporte Operativo Oficial de Control de Combustible</h2>
+    <div class="line"></div>
+</div>
+
+<div id="app">
+  
+  <div id="tabOperational">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;display:flex;align-items:center;gap:4px;">
+          <i data-lucide="truck" class="w-4 h-4 text-red-500"></i> Unidades (6)
+        </span>
+        <span style="font-size:10px;color:#fbbf24;font-weight:600;">4 Veh&iacute;culos / 2 Motos</span>
+      </div>
+      <div class="vehicle-list" id="vehicleList"></div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #dc2626;">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <span style="font-size:9px;background:#dc2626;color:#fff;padding:2px 10px;border-radius:4px;font-weight:700;text-transform:uppercase;" id="vehicleType">Veh&iacute;culo</span>
+          <div style="font-size:18px;font-weight:900;color:#fff;margin-top:4px;" id="vehicleName">Cargando...</div>
+          <div style="font-size:11px;color:#fbbf24;font-weight:600;" id="vehiclePlate">---</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-box"><div class="label">&Uacute;LTIMO REPOSTAJE</div><div class="value" id="statRefuel">0 L</div></div>
+        <div class="stat-box"><div class="label">DISPONIBLE</div><div class="value" id="statAvailable">0 L</div></div>
+        <div class="stat-box"><div class="label">&Uacute;LTIMA GUARDIA</div><div class="value" id="statGuard">---</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
+      <button class="btn-fire" id="btnNewReport" onclick="openModal()">
+        <i data-lucide="plus-circle" class="w-5 h-5"></i> Nuevo Repostaje
+      </button>
+      <button class="btn-green" onclick="shareWhatsApp()">
+        <i data-lucide="message-square" class="w-5 h-5"></i> WhatsApp
+      </button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;display:flex;align-items:center;gap:4px;">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i> Historial
+        </span>
+        <span style="font-size:11px;color:#94a3b8;" id="recordCount">0 registros</span>
+      </div>
+      <div id="logsList"></div>
+    </div>
+  </div>
+
+  <div id="tabDashboard" style="display:none;">
+    <div class="card" style="padding:12px;">
+      <div class="period-selector">
+        <button class="period-btn active" onclick="setDashboardPeriod('weekly')" id="btnPeriodWeekly">Semanal (7d)</button>
+        <button class="period-btn" onclick="setDashboardPeriod('fortnightly')" id="btnPeriodFortnightly">Quincenal (15d)</button>
+        <button class="period-btn" onclick="setDashboardPeriod('monthly')" id="btnPeriodMonthly">Mensual (30d)</button>
+      </div>
+    </div>
+
+    <div class="stats" style="grid-template-columns: repeat(2, 1fr); gap:10px; margin-top:12px;">
+      <div class="stat-box" style="padding:14px; background:linear-gradient(135deg, rgba(220,38,38,0.15), rgba(15,23,42,0.8)); border-color:rgba(220,38,38,0.3);">
+        <div class="label" style="display:flex;align-items:center;justify-content:center;gap:4px;color:#fca5a5;">
+          <i data-lucide="fuel" class="w-3.5 h-3.5"></i> Consumo Total
+        </div>
+        <div class="value" style="font-size:22px;color:#ef4444;" id="dashTotalFuel">0.0 L</div>
+      </div>
+      <div class="stat-box" style="padding:14px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(15,23,42,0.8)); border-color:rgba(245,158,11,0.3);">
+        <div class="label" style="display:flex;align-items:center;justify-content:center;gap:4px;color:#fde68a;">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Promedio Diario
+        </div>
+        <div class="value" style="font-size:22px;color:#f59e0b;" id="dashDailyAvg">0.0 L/d&iacute;a</div>
+      </div>
+    </div>
+
+    <div class="stats" style="grid-template-columns: repeat(2, 1fr); gap:10px; margin-top:10px;">
+      <div class="stat-box" style="padding:12px;">
+        <div class="label">Mayor Consumo</div>
+        <div class="value" style="font-size:13px;color:#38bdf8;" id="dashTopUnit">---</div>
+      </div>
+      <div class="stat-box" style="padding:12px;">
+        <div class="label">Total Repostajes</div>
+        <div class="value" style="font-size:13px;color:#34d399;" id="dashRefuelCount">0 registros</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:11px;font-weight:800;color:#f8fafc;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="pie-chart" class="w-4 h-4 text-amber-500"></i> Distribuci&oacute;n por Unidades
+        </span>
+        <span style="font-size:9px;color:#94a3b8;font-weight:600;" id="dashPeriodSubtitle">&Uacute;ltimos 7 d&iacute;as</span>
+      </div>
+      <div class="chart-container-wrapper">
+        <canvas id="donutChartCanvas"></canvas>
+        <div class="donut-center-metric">
+          <div class="liters" id="donutCenterLiters">0 L</div>
+          <div class="subtext">TOTAL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div style="margin-bottom:4px;">
+        <span style="font-size:11px;font-weight:800;color:#f8fafc;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i> Veh&iacute;culos vs Motocicletas
+        </span>
+      </div>
+      <div style="height: 160px; position:relative; display:flex; align-items:center; justify-content:center;">
+        <canvas id="typeDonutChartCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:800;color:#f8fafc;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-400"></i> Detalle por Unidad
+        </span>
+      </div>
+      <div id="unitBreakdownList"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav-tabs">
+  <button class="nav-tab-btn active" id="tabBtnOperational" onclick="switchTab('operational')">
+    <i data-lucide="flame" class="w-5 h-5"></i>
+    <span>Operativa</span>
+  </button>
+  <button class="nav-tab-btn" id="tabBtnDashboard" onclick="switchTab('dashboard')">
+    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+    <span>Dashboard</span>
+  </button>
+</nav>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px;align-items:center;">
+      <h3 style="color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="file-text" class="w-5 h-5 text-red-500"></i> <span id="modalTitle">Nuevo Reporte</span>
+      </h3>
+      <button onclick="closeModal()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+    <form id="reportForm" onsubmit="saveReport(event)">
+      <input type="hidden" id="editId">
+      <label>Unidad</label>
+      <select id="formVehicle" style="margin-bottom:12px;"></select>
+      <label>Fecha</label>
+      <input type="date" id="formDate" style="margin-bottom:12px;">
+      <label>Parte Diario</label>
+      <input type="text" id="formDaily" placeholder="C&oacute;digo de parte" style="margin-bottom:12px;">
+      <label>Secci&oacute;n de Guardia</label>
+      <select id="formGuard" style="margin-bottom:12px;">
+        <option value="Sección A">Secci&oacute;n A</option>
+        <option value="Sección B">Secci&oacute;n B</option>
+        <option value="Sección C">Secci&oacute;n C</option>
+      </select>
+      <div class="row">
+        <div><label>Repostado (L)</label><input type="number" id="formRefueled" step="0.01" min="0" placeholder="0.00" required></div>
+        <div><label>Disponible (L)</label><input type="number" id="formAvailable" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <label style="margin-top:12px;">Reportado por</label>
+      <input type="text" id="formReporter" placeholder="Cabo 1ro. Juan P&eacute;rez" style="margin-bottom:12px;">
+      <label>Observaciones / Origen</label>
+      <textarea id="formObservation" rows="2" placeholder="Donaci&oacute;n, Estaci&oacute;n de Servicio..." style="margin-bottom:12px;"></textarea>
+      <label>Adjuntar im&aacute;genes (m&aacute;x 3)</label>
+      <input type="file" id="formImages" accept="image/*" multiple style="margin-bottom:8px;">
+      <div class="image-preview-container" id="imagePreviewContainer"></div>
+      <button type="submit" class="btn-fire" style="margin-top:16px;" id="submitReportBtn">
+        <i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte
+      </button>
+    </form>
+  </div>
+</div>
+
+<div id="pdfRenderArea"></div>
+
+<div id="pdfPreviewOverlay">
+  <div class="pdf-preview-wrapper">
+    <div class="pdf-preview-content" id="pdfPreviewContent"></div>
+  </div>
+  <div class="pdf-actions">
+    <button class="btn-close-pdf" onclick="closePdfPreview()">Cerrar</button>
+    <button class="btn-download-pdf" id="downloadPdfBtn">&#128229; Descargar PDF</button>
+  </div>
+</div>
+
+<div id="imageZoomModal">
+  <button class="close-zoom" onclick="closeZoomModal()">&times;</button>
+  <img id="zoomedImageElement" src="" alt="Zoom Evidencia">
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // =============================================================
+  // SERVICE WORKER REGISTRATION
+  // =============================================================
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function(registration) {
+          console.log('✅ Service Worker registrado correctamente');
+        })
+        .catch(function(error) {
+          console.log('❌ Error registrando Service Worker:', error);
+        });
+    });
+  }
+
+  // =============================================================
+  // CONFIGURACIÓN SUPABASE
+  // =============================================================
+  const supabaseUrl = "https://amtcbefylpyteqfkfgsl.supabase.co";
+  const supabaseAnonKey = "sb_publishable_OEwmcx4ml5F4fiPGCO_XBA_kHDx2C8x";
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+  
+  async function ensureAuth() {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) return false;
+      if (data.session) return true;
+      const { data: signInData, error: signInError } = await supabaseClient.auth.signInAnonymously();
+      if (signInError) return false;
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // =============================================================
+  // VARIABLES GLOBALES
+  // =============================================================
+  let selectedVehicleId = "veh_1";
+  let fuelLogs = [];
+  let imagesBase64 = [];
+  let isSubscribed = false;
+  let currentPeriod = 'weekly';
+  let mainDonutChart = null;
+  let typeDonutChart = null;
+  let currentPdfLogId = null;
+  let isGeneratingPdf = false;
+
+  const vehicles = [
+    { id: "veh_1", name: "Vehículo 01", plate: "Unidad 03 VIR", type: "car" },
+    { id: "veh_2", name: "Vehículo 02", plate: "Unidad 05 Ambulancia", type: "car" },
+    { id: "veh_3", name: "Vehículo 03", plate: "Unidad 06 Logística", type: "car" },
+    { id: "veh_4", name: "Vehículo 04", plate: "Unidad 07 Cisterna", type: "car" },
+    { id: "veh_5", name: "Vehículo 05", plate: "Unidad 04 Moto GRUMAE", type: "moto" },
+    { id: "veh_6", name: "Vehículo 06", plate: "Unidad Moto Comandancia", type: "moto" }
+  ];
+
+  // =============================================================
+  // FUNCIONES UTILITARIAS
+  // =============================================================
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  function formatDateLong(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return `${parseInt(parts[2])} de ${months[parseInt(parts[1])-1]} de ${parts[0]}`;
+  }
+
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 50);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 400);
+    }, 3500);
+  }
+
+  function updateStatus(online) {
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    if (online) { dot.className = 'dot online'; text.textContent = 'Conectado'; }
+    else { dot.className = 'dot offline'; text.textContent = 'Modo Offline'; }
+  }
+  window.addEventListener('online', () => updateStatus(true));
+  window.addEventListener('offline', () => updateStatus(false));
+  updateStatus(navigator.onLine);
+
+  // =============================================================
+  // NAVEGACIÓN ENTRE TABS
+  // =============================================================
+  function switchTab(tabName) {
+    const tabOperational = document.getElementById('tabOperational');
+    const tabDashboard = document.getElementById('tabDashboard');
+    const btnOperational = document.getElementById('tabBtnOperational');
+    const btnDashboard = document.getElementById('tabBtnDashboard');
+
+    if (tabName === 'dashboard') {
+      tabOperational.style.display = 'none';
+      tabDashboard.style.display = 'block';
+      btnOperational.classList.remove('active');
+      btnDashboard.classList.add('active');
+      updateDashboard();
+    } else {
+      tabOperational.style.display = 'block';
+      tabDashboard.style.display = 'none';
+      btnOperational.classList.add('active');
+      btnDashboard.classList.remove('active');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // =============================================================
+  // IMÁGENES DEL REPORTE
+  // =============================================================
+  document.getElementById('formImages').addEventListener('change', function(e) {
+    const files = e.target.files;
+    imagesBase64 = [];
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = '';
+    
+    if (files.length > 3) {
+      showToast('Máximo 3 imágenes', 'warning');
+      this.value = '';
+      return;
+    }
+    
+    Array.from(files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          let w = img.width, h = img.height;
+          const maxDim = 1200;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h *= maxDim / w; w = maxDim; }
+            else { w *= maxDim / h; h = maxDim; }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+          imagesBase64.push(compressedBase64);
+
+          const div = document.createElement('div');
+          div.className = 'preview-item';
+          div.innerHTML = `
+            <img src="${compressedBase64}" alt="Evidencia ${index+1}" onclick="zoomImage('${compressedBase64}')">
+            <button type="button" class="remove-btn" onclick="removeImage(${imagesBase64.length-1})">&times;</button>
+          `;
+          container.appendChild(div);
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  function removeImage(index) {
+    imagesBase64.splice(index, 1);
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = '';
+    imagesBase64.forEach((img, i) => {
+      const div = document.createElement('div');
+      div.className = 'preview-item';
+      div.innerHTML = `
+        <img src="${img}" alt="Evidencia ${i+1}" onclick="zoomImage('${img}')">
+        <button type="button" class="remove-btn" onclick="removeImage(${i})">&times;</button>
+      `;
+      container.appendChild(div);
+    });
+    document.getElementById('formImages').value = '';
+  }
+
+  function zoomImage(src) {
+    document.getElementById('zoomedImageElement').src = src;
+    document.getElementById('imageZoomModal').classList.add('open');
+  }
+
+  function closeZoomModal() {
+    document.getElementById('imageZoomModal').classList.remove('open');
+  }
+
+  // =============================================================
+  // RENDERIZADO DE VEHÍCULOS
+  // =============================================================
+  function renderVehicles() {
+    const container = document.getElementById('vehicleList');
+    const select = document.getElementById('formVehicle');
+    if (!container || !select) return;
+    
+    container.innerHTML = '';
+    select.innerHTML = '';
+    
+    vehicles.forEach(v => {
+      const active = v.id === selectedVehicleId ? 'active' : '';
+      const iconAttr = v.type === 'moto' ? 'bike' : 'truck';
+      
+      const el = document.createElement('div');
+      el.className = `vehicle-item ${active}`;
+      el.innerHTML = `<div class="name"><i data-lucide="${iconAttr}" class="w-3.5 h-3.5 inline-block"></i> ${v.name}</div><div class="plate">${v.plate}</div>`;
+      el.onclick = () => selectVehicle(v.id);
+      container.appendChild(el);
+      
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = `${v.name} (${v.plate})`;
+      if (v.id === selectedVehicleId) opt.selected = true;
+      select.appendChild(opt);
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function selectVehicle(id) {
+    selectedVehicleId = id;
+    renderVehicles();
+    updateSummary();
+    renderLogs();
+  }
+
+  // =============================================================
+  // RESUMEN Y ESTADÍSTICAS
+  // =============================================================
+  function updateSummary() {
+    const v = vehicles.find(v => v.id === selectedVehicleId);
+    if (!v) return;
+    
+    document.getElementById('vehicleName').textContent = v.name;
+    document.getElementById('vehiclePlate').textContent = v.plate;
+    document.getElementById('vehicleType').textContent = v.type === 'moto' ? 'Motocicleta' : 'Vehículo';
+    
+    const logs = fuelLogs.filter(l => l.vehicle_id === selectedVehicleId);
+    if (logs.length === 0) {
+      document.getElementById('statRefuel').textContent = '0 L';
+      document.getElementById('statAvailable').textContent = '0 L';
+      document.getElementById('statGuard').textContent = '---';
+      return;
+    }
+    const last = logs[0];
+    document.getElementById('statRefuel').textContent = `${last.refueled_amount || 0} L`;
+    document.getElementById('statAvailable').textContent = `${last.available_amount || 0} L`;
+    document.getElementById('statGuard').textContent = last.guard_section || '---';
+  }
+
+  // =============================================================
+  // RENDERIZADO DE LOGS (HISTORIAL)
+  // =============================================================
+  function renderLogs() {
+    const container = document.getElementById('logsList');
+    if (!container) return;
+    
+    const logs = fuelLogs.filter(l => l.vehicle_id === selectedVehicleId);
+    document.getElementById('recordCount').textContent = `${logs.length} registros`;
+    container.innerHTML = '';
+    
+    if (logs.length === 0) {
+      container.innerHTML = `<div style="text-align:center;color:#64748b;padding:20px;">No hay reportes</div>`;
+      return;
+    }
+    
+    logs.forEach(log => {
+      const div = document.createElement('div');
+      div.className = 'log-item';
+      const hasImg = log.images && log.images.length > 0;
+      div.innerHTML = `
+        <div class="info">
+          <div class="date">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i> ${formatDate(log.date)} 
+            <span style="font-size:10px;color:#fbbf24;margin-left:4px;">${log.guard_section || ''}</span>
+          </div>
+          <div class="details">Repostado: ${log.refueled_amount} L &bull; Disponible: ${log.available_amount} L ${log.daily_report ? '&bull; Parte: '+log.daily_report : ''}</div>
+          ${log.observation ? `<div class="details" style="color:#94a3b8;font-style:italic;max-height:40px;overflow:hidden;text-overflow:ellipsis;">${log.observation}</div>` : ''}
+          ${hasImg ? `<div class="details" style="color:#60a5fa;display:flex;align-items:center;gap:3px;margin-top:2px;"><i data-lucide="image" class="w-3 h-3"></i> ${log.images.length} imagen(es) de evidencia</div>` : ''}
+        </div>
+        <div class="actions">
+          <button onclick="showPdfPreview('${log.id}')" title="Ver PDF"><i data-lucide="eye" class="w-4 h-4"></i></button>
+          <button onclick="editReport('${log.id}')" title="Editar"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+          <button onclick="deleteReport('${log.id}')" title="Eliminar"><i data-lucide="trash" class="w-4 h-4"></i></button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // =============================================================
+  // DASHBOARD
+  // =============================================================
+  function setDashboardPeriod(period) {
+    currentPeriod = period;
+    document.getElementById('btnPeriodWeekly').className = `period-btn ${period==='weekly'?'active':''}`;
+    document.getElementById('btnPeriodFortnightly').className = `period-btn ${period==='fortnightly'?'active':''}`;
+    document.getElementById('btnPeriodMonthly').className = `period-btn ${period==='monthly'?'active':''}`;
+    
+    const titles = {
+      weekly: 'Últimos 7 días',
+      fortnightly: 'Últimos 15 días',
+      monthly: 'Últimos 30 días'
+    };
+    document.getElementById('dashPeriodSubtitle').textContent = titles[period];
+    updateDashboard();
+  }
+
+  function getDaysCount() {
+    if (currentPeriod === 'weekly') return 7;
+    if (currentPeriod === 'fortnightly') return 15;
+    return 30;
+  }
+
+  function animateNumber(element, target) {
+    if (!element) return;
+    let current = 0;
+    const duration = 1000;
+    const start = performance.now();
+    
+    function update(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3); 
+      current = target * easedProgress;
+      element.textContent = `${current.toFixed(1)} L`;
+      
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        element.textContent = `${target.toFixed(1)} L`;
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  function updateDashboard() {
+    const days = getDaysCount();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    cutoffDate.setHours(0,0,0,0);
+
+    const filteredLogs = fuelLogs.filter(log => {
+      if (!log.date) return false;
+      const logDate = new Date(log.date + 'T00:00:00');
+      return logDate >= cutoffDate;
+    });
+
+    let totalLiters = 0;
+    const unitConsumptions = {};
+    let carLiters = 0;
+    let motoLiters = 0;
+
+    vehicles.forEach(v => { unitConsumptions[v.id] = 0; });
+
+    filteredLogs.forEach(log => {
+      const amount = Number(log.refueled_amount) || 0;
+      totalLiters += amount;
+      if (unitConsumptions[log.vehicle_id] !== undefined) {
+        unitConsumptions[log.vehicle_id] += amount;
+      }
+      const v = vehicles.find(veh => veh.id === log.vehicle_id);
+      if (v) {
+        if (v.type === 'moto') motoLiters += amount;
+        else carLiters += amount;
+      }
+    });
+
+    document.getElementById('dashTotalFuel').textContent = `${totalLiters.toFixed(1)} L`;
+    animateNumber(document.getElementById('donutCenterLiters'), totalLiters);
+    
+    const dailyAvg = totalLiters / days;
+    document.getElementById('dashDailyAvg').textContent = `${dailyAvg.toFixed(1)} L/día`;
+    document.getElementById('dashRefuelCount').textContent = `${filteredLogs.length} registros`;
+
+    let maxLiters = -1;
+    let topUnitName = 'Sin datos';
+    vehicles.forEach(v => {
+      if (unitConsumptions[v.id] > maxLiters && unitConsumptions[v.id] > 0) {
+        maxLiters = unitConsumptions[v.id];
+        topUnitName = `${v.name} (${maxLiters.toFixed(1)}L)`;
+      }
+    });
+    document.getElementById('dashTopUnit').textContent = topUnitName;
+
+    renderMainDonutChart(unitConsumptions, totalLiters);
+    renderTypeDonutChart(carLiters, motoLiters, totalLiters);
+    renderUnitBreakdown(unitConsumptions, totalLiters, filteredLogs);
+  }
+
+  function renderMainDonutChart(unitConsumptions, totalLiters) {
+    const ctx = document.getElementById('donutChartCanvas').getContext('2d');
+    const labels = vehicles.map(v => v.name);
+    const dataValues = vehicles.map(v => unitConsumptions[v.id] || 0);
+    const sliceColors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
+
+    if (mainDonutChart) mainDonutChart.destroy();
+
+    mainDonutChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: dataValues, backgroundColor: sliceColors, borderColor: '#161f33', borderWidth: 3, hoverOffset: 12, borderRadius: 6 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        animation: { animateScale: true, animateRotate: true, duration: 1000, easing: 'easeInOutQuart' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, weight: 'bold' }, padding: 12, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleColor: '#ffffff',
+            bodyColor: '#fbbf24',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: true,
+            callbacks: { label: function(context) {
+              const value = context.raw || 0;
+              const percentage = totalLiters > 0 ? ((value / totalLiters) * 100).toFixed(1) : '0';
+              return ` ${value.toFixed(1)} L (${percentage}%)`;
+            }}
+          }
+        }
+      }
+    });
+  }
+
+  function renderTypeDonutChart(carLiters, motoLiters, totalLiters) {
+    const ctx = document.getElementById('typeDonutChartCanvas').getContext('2d');
+    if (typeDonutChart) typeDonutChart.destroy();
+
+    typeDonutChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Vehículos (4 Ruedas)', 'Motocicletas'],
+        datasets: [{ data: [carLiters, motoLiters], backgroundColor: ['#ef4444', '#f59e0b'], borderColor: '#161f33', borderWidth: 3, hoverOffset: 8, borderRadius: 4 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        animation: { duration: 900, easing: 'easeInOutQuart' },
+        plugins: {
+          legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 10, weight: 'bold' }, padding: 10, usePointStyle: true } },
+          tooltip: { callbacks: { label: function(context) {
+            const value = context.raw || 0;
+            const percentage = totalLiters > 0 ? ((value / totalLiters) * 100).toFixed(1) : '0';
+            return ` ${value.toFixed(1)} L (${percentage}%)`;
+          }} }
+        }
+      }
+    });
+  }
+
+  function renderUnitBreakdown(unitConsumptions, totalLiters, filteredLogs) {
+    const container = document.getElementById('unitBreakdownList');
+    container.innerHTML = '';
+
+    vehicles.forEach((v, index) => {
+      const liters = unitConsumptions[v.id] || 0;
+      const percentage = totalLiters > 0 ? ((liters / totalLiters) * 100) : 0;
+      const count = filteredLogs.filter(l => l.vehicle_id === v.id).length;
+      const iconAttr = v.type === 'moto' ? 'bike' : 'truck';
+      const barColorClass = index % 2 === 0 ? 'bg-red-500' : 'bg-amber-500';
+
+      const div = document.createElement('div');
+      div.className = 'unit-progress-item';
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:#ffffff;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="${iconAttr}" class="w-3.5 h-3.5 text-slate-400"></i> ${v.name}
+            <span style="font-size:10px;color:#94a3b8;font-weight:500;">(${v.plate})</span>
+          </span>
+          <span style="font-size:12px;font-weight:900;color:#fbbf24;">
+            ${liters.toFixed(1)} L <span style="font-size:10px;color:#94a3b8;font-weight:500;">(${percentage.toFixed(1)}%)</span>
+          </span>
+        </div>
+        <div style="width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;">
+          <div style="width:${percentage}%;height:100%;border-radius:10px;transition:width 0.8s ease;" class="${barColorClass}"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#64748b;">
+          <span>${count} repostaje(s) registrado(s)</span>
+          <span>Tipo: ${v.type === 'moto'?'MOTO':'VEHÍCULO'}</span>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // =============================================================
+  // MODALES - NUEVO REPORTE
+  // =============================================================
+  function openModal(editData = null) {
+    const modal = document.getElementById('modal');
+    const form = document.getElementById('reportForm');
+    const title = document.getElementById('modalTitle');
+    const submitBtn = document.getElementById('submitReportBtn');
+    
+    form.reset();
+    document.getElementById('editId').value = '';
+    document.getElementById('formDate').value = todayStr();
+    document.getElementById('formDate').min = todayStr();
+    document.getElementById('formVehicle').value = selectedVehicleId;
+    imagesBase64 = [];
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    
+    if (editData) {
+      title.textContent = 'Editar Reporte';
+      submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Actualizar Reporte';
+      document.getElementById('editId').value = editData.id;
+      document.getElementById('formVehicle').value = editData.vehicle_id;
+      document.getElementById('formDate').value = editData.date;
+      document.getElementById('formDaily').value = editData.daily_report || '';
+      document.getElementById('formGuard').value = editData.guard_section || 'Sección A';
+      document.getElementById('formRefueled').value = editData.refueled_amount;
+      document.getElementById('formAvailable').value = editData.available_amount;
+      document.getElementById('formReporter').value = editData.reported_by || '';
+      document.getElementById('formObservation').value = editData.observation || '';
+      
+      imagesBase64 = editData.images || [];
+      const container = document.getElementById('imagePreviewContainer');
+      container.innerHTML = '';
+      imagesBase64.forEach((img, i) => {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+          <img src="${img}" alt="Evidencia ${i+1}" onclick="zoomImage('${img}')">
+          <button type="button" class="remove-btn" onclick="removeImage(${i})">&times;</button>
+        `;
+        container.appendChild(div);
+      });
+    } else {
+      title.textContent = 'Nuevo Reporte';
+      submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte';
+    }
+    
+    modal.classList.add('open');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  // =============================================================
+  // CRUD - SUPABASE & LOCALSTORAGE (OFFLINE FIRST)
+  // =============================================================
+  async function loadReports() {
+    try {
+      const { data, error } = await supabaseClient
+        .from('fuel_reports')
+        .select('*')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      if (data) {
+        fuelLogs = data;
+        localStorage.setItem('fuel_reports_local', JSON.stringify(fuelLogs));
+      }
+    } catch (err) {
+      console.warn('Usando respaldo local offline:', err);
+      const localData = localStorage.getItem('fuel_reports_local');
+      if (localData) {
+        try { fuelLogs = JSON.parse(localData); } catch(e){}
+      }
+    }
+    renderLogs();
+    updateSummary();
+    updateDashboard();
+  }
+
+  async function saveReportToSupabase(payload) {
+    try {
+      const { data, error } = await supabaseClient.from('fuel_reports').insert([payload]).select();
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      payload.id = 'local_' + Date.now();
+      fuelLogs.unshift(payload);
+      localStorage.setItem('fuel_reports_local', JSON.stringify(fuelLogs));
+      showToast('Guardado localmente (Sin conexión)', 'warning');
+      return [payload];
+    }
+  }
+
+  async function updateReportInSupabase(id, payload) {
+    try {
+      if (id.toString().startsWith('local_')) {
+        const index = fuelLogs.findIndex(l => l.id === id);
+        if (index !== -1) {
+          fuelLogs[index] = { ...fuelLogs[index], ...payload };
+          localStorage.setItem('fuel_reports_local', JSON.stringify(fuelLogs));
+        }
+        return [fuelLogs[index]];
+      }
+      const { data, error } = await supabaseClient.from('fuel_reports').update(payload).eq('id', id).select();
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      showToast('Actualizado localmente', 'warning');
+      return null;
+    }
+  }
+
+  async function deleteReportFromSupabase(id) {
+    try {
+      if (id.toString().startsWith('local_')) {
+        fuelLogs = fuelLogs.filter(l => l.id !== id);
+        localStorage.setItem('fuel_reports_local', JSON.stringify(fuelLogs));
+        return true;
+      }
+      const { error } = await supabaseClient.from('fuel_reports').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      fuelLogs = fuelLogs.filter(l => l.id !== id);
+      localStorage.setItem('fuel_reports_local', JSON.stringify(fuelLogs));
+      return true;
+    }
+  }
+
+  function subscribeToReports() {
+    if (isSubscribed) return;
+    try {
+      const subscription = supabaseClient
+        .channel('fuel_reports_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'fuel_reports' }, () => { loadReports(); })
+        .subscribe((status) => { 
+          if (status === 'SUBSCRIBED') {
+            isSubscribed = true;
+          }
+        });
+      return subscription;
+    } catch (err) { 
+      return null; 
+    }
+  }
+
+  // =============================================================
+  // GUARDAR REPORTE
+  // =============================================================
+  async function saveReport(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitReportBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+    
+    try {
+      const editId = document.getElementById('editId').value;
+      const vehicleId = document.getElementById('formVehicle').value;
+      const date = document.getElementById('formDate').value;
+      const dailyReport = document.getElementById('formDaily').value;
+      const guardSection = document.getElementById('formGuard').value;
+      const refueledAmount = Number(document.getElementById('formRefueled').value) || 0;
+      const availableAmount = Number(document.getElementById('formAvailable').value) || 0;
+      const reportedBy = document.getElementById('formReporter').value;
+      const observation = document.getElementById('formObservation').value;
+      
+      if (!date) { 
+        showToast('Selecciona una fecha', 'warning'); 
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte';
+        if (window.lucide) lucide.createIcons();
+        return; 
+      }
+      if (refueledAmount <= 0) { 
+        showToast('Ingresa una cantidad repostada válida', 'warning'); 
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte';
+        if (window.lucide) lucide.createIcons();
+        return; 
+      }
+
+      const vehicle = vehicles.find(v => v.id === vehicleId);
+      if (!vehicle) { 
+        showToast('Selecciona una unidad válida', 'warning'); 
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte';
+        if (window.lucide) lucide.createIcons();
+        return; 
+      }
+
+      await ensureAuth();
+
+      const payload = {
+        vehicle_id: vehicleId,
+        vehicle_name: vehicle.name,
+        vehicle_plate: vehicle.plate,
+        date: date,
+        daily_report: dailyReport || '',
+        guard_section: guardSection || 'Sección A',
+        refueled_amount: refueledAmount,
+        available_amount: availableAmount,
+        reported_by: reportedBy || '',
+        observation: observation || '',
+        images: imagesBase64 || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
+      if (editId) {
+        result = await updateReportInSupabase(editId, payload);
+        if (result) showToast('Reporte actualizado', 'success');
+      } else {
+        result = await saveReportToSupabase(payload);
+        if (result) showToast('Reporte guardado con éxito', 'success');
+      }
+      
+      if (result) {
+        await loadReports();
+        imagesBase64 = [];
+        document.getElementById('imagePreviewContainer').innerHTML = '';
+        document.getElementById('formImages').value = '';
+        closeModal();
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Guardar Reporte';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  // =============================================================
+  // EDITAR Y ELIMINAR REPORTE
+  // =============================================================
+  function editReport(id) {
+    const log = fuelLogs.find(l => l.id === id);
+    if (!log) {
+      showToast('Reporte no encontrado', 'error');
+      return;
+    }
+    openModal(log);
+  }
+
+  async function deleteReport(id) {
+    if (!confirm('¿Eliminar este reporte permanentemente?')) return;
+    const success = await deleteReportFromSupabase(id);
+    if (success) {
+      showToast('Reporte eliminado', 'info');
+      await loadReports();
+    }
+  }
+
+  // =============================================================
+  // COMPARTIR POR WHATSAPP
+  // =============================================================
+  function shareWhatsApp() {
+    const v = vehicles.find(v => v.id === selectedVehicleId);
+    const logs = fuelLogs.filter(l => l.vehicle_id === selectedVehicleId);
+    
+    if (logs.length === 0) { 
+      showToast('No hay reportes para compartir', 'warning'); 
+      return; 
+    }
+    
+    const last = logs[0];
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    let msg = `🧯🚒🔥 *CUERPO DE BOMBEROS MUNICIPIO PEDRAZA* 🔥🚒🧯\n`;
+    msg += `📍 *REDAN Los Llanos - ZOEDAN Barinas*\n\n`;
+    msg += `📋 *REPORTE DE COMBUSTIBLE*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    msg += `🚒 *Unidad:* ${v.name} (${v.plate})\n`;
+    msg += `📅 *Fecha:* ${formatDate(last.date)}\n`;
+    msg += `🕐 *Hora:* ${timeStr}\n`;
+    msg += `🛡️ *Guardia:* ${last.guard_section || 'N/A'}\n`;
+    
+    if (last.daily_report) {
+      msg += `📄 *Parte Diario:* ${last.daily_report}\n`;
+    }
+    
+    if (last.reported_by) {
+      msg += `👨‍🚒 *Reporta:* ${last.reported_by}\n`;
+    }
+    
+    msg += `\n⛽ *Repostado:* ${last.refueled_amount} L\n`;
+    msg += `🪣 *Disponible:* ${last.available_amount} L\n`;
+    
+    if (last.observation) {
+      msg += `\n📝 *Observaciones:*\n${last.observation}\n`;
+    }
+    
+    msg += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📎 _Reporte generado automáticamente_`;
+    
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  // =============================================================
+  // GENERACIÓN DE PDF OFICIAL (CON LOGOS INSTITUCIONALES)
+  // =============================================================
+  function generatePdfHtml(log) {
+    const v = vehicles.find(v => v.id === log.vehicle_id);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    let imagesHTML = '';
+    if (log.images && log.images.length > 0) {
+      imagesHTML = `<div class="images-section">`;
+      log.images.forEach((img, i) => {
+        imagesHTML += `
+          <div class="img-item">
+            <img src="${img}" alt="Evidencia ${i+1}" crossorigin="anonymous">
+            <div class="caption">Evidencia ${i+1}</div>
+          </div>
+        `;
+      });
+      imagesHTML += `</div>`;
+    }
+
+    const unidadCompleta = v ? `${v.name} - ${v.plate}` : 'N/A';
+
+    // Logos institucionales para el PDF
+    const logoHTML = `
+      <div style="display:flex; align-items:center; justify-content:center; gap:24px; margin-bottom: 4px;">
+        <img src="images/dgnb.png" alt="Logo DGNB" crossorigin="anonymous" style="height: 75px; max-width: 85px; object-fit: contain; background: #f8fafc; padding: 4px; border-radius: 6px; border: 1px solid #d1d5db;">
+        <div style="text-align:center;">
+          <div class="republic">República Bolivariana de Venezuela</div>
+          <div class="cuerpo">Cuerpo de Bomberos Municipio Pedraza</div>
+          <div class="redan">REDAN Los Llanos - ZOEDAN Barinas</div>
+        </div>
+        <img src="images/logo.png" alt="Logo Bombero" crossorigin="anonymous" style="height: 75px; max-width: 85px; object-fit: contain; background: transparent; padding: 4px;">
+      </div>
+    `;
+
+    return `
+      <div class="pdf-header">
+        <div class="logo-row">
+          ${logoHTML}
+        </div>
+        <div class="title">Reporte Operativo Oficial de Control de Combustible</div>
+      </div>
+      <div class="pdf-body">
+        <div class="info-grid">
+          <div class="item"><span class="label">Unidad Asignada</span><span class="value">${unidadCompleta}</span></div>
+          <div class="item"><span class="label">Fecha Emisión</span><span class="value">${formatDateLong(log.date)}</span></div>
+          <div class="item"><span class="label">Hora Registro</span><span class="value">${timeStr}</span></div>
+          <div class="item"><span class="label">Sección Guardia</span><span class="value">${log.guard_section || 'N/A'}</span></div>
+          <div class="item"><span class="label">Parte Diario</span><span class="value">${log.daily_report || 'N/A'}</span></div>
+          <div class="item full"><span class="label">Funcionario Reporta</span><span class="value">${log.reported_by || 'N/A'}</span></div>
+        </div>
+        <div class="amounts">
+          <div class="box refueled"><div class="label">Cantidad Repostada</div><div class="value">${log.refueled_amount} L</div></div>
+          <div class="box available"><div class="label">Combustible Disponible</div><div class="value">${log.available_amount} L</div></div>
+        </div>
+        <div class="observation">
+          <strong>Observaciones / Origen del Suministro:</strong><br>
+          ${log.observation || 'Ninguna observación registrada'}
+        </div>
+        ${imagesHTML}
+      </div>
+      <div class="pdf-footer">
+        <span>Cuerpo de Bomberos Municipio Pedraza</span>
+        <span>Control Operativo Interno</span>
+      </div>
+    `;
+  }
+
+  // =============================================================
+  // VISTA PREVIA DEL PDF
+  // =============================================================
+  function showPdfPreview(id) {
+    const log = fuelLogs.find(l => l.id === id);
+    if (!log) {
+      showToast('Reporte no encontrado', 'error');
+      return;
+    }
+
+    currentPdfLogId = id;
+    const previewContainer = document.getElementById('pdfPreviewContent');
+    previewContainer.innerHTML = generatePdfHtml(log);
+
+    document.getElementById('pdfPreviewOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('downloadPdfBtn').onclick = () => downloadPdf(id);
+  }
+
+  function closePdfPreview() {
+    document.getElementById('pdfPreviewOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    document.getElementById('downloadPdfBtn').onclick = null;
+  }
+
+  // =============================================================
+  // DESCARGA DEL PDF
+  // =============================================================
+  async function downloadPdf(id) {
+    if (isGeneratingPdf) {
+      showToast('Ya se está generando un PDF, por favor espere...', 'warning');
+      return;
+    }
+
+    const log = fuelLogs.find(l => l.id === id);
+    if (!log) {
+      showToast('Reporte no encontrado', 'error');
+      return;
+    }
+
+    isGeneratingPdf = true;
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = '⏳ Generando...';
+
+    showToast('Generando documento PDF oficial...', 'info');
+
+    const renderArea = document.getElementById('pdfRenderArea');
+    renderArea.innerHTML = generatePdfHtml(log);
+
+    renderArea.style.position = 'fixed';
+    renderArea.style.top = '0';
+    renderArea.style.left = '0';
+    renderArea.style.zIndex = '99999';
+    renderArea.style.opacity = '1';
+    renderArea.style.pointerEvents = 'none';
+    renderArea.style.width = '800px';
+    renderArea.style.background = '#ffffff';
+    renderArea.style.padding = '32px 40px';
+
+    const imgs = renderArea.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+
+    await new Promise(r => setTimeout(r, 400));
+
+    try {
+      const canvas = await html2canvas(renderArea, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: renderArea.scrollHeight
+      });
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        unit: 'in',
+        format: 'letter',
+        orientation: 'portrait',
+        compress: true
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdfWidth = 8.5;
+      const pdfHeight = 11.0;
+      const margin = 0.4;
+      const imgWidth = pdfWidth - (margin * 2);
+      const imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+      let finalHeight = imgHeight;
+      let finalWidth = imgWidth;
+      const maxHeight = pdfHeight - (margin * 2);
+
+      if (finalHeight > maxHeight) {
+        finalHeight = maxHeight;
+        finalWidth = (canvas.width / canvas.height) * finalHeight;
+      }
+
+      const xOffset = (pdfWidth - finalWidth) / 2;
+      const yOffset = (pdfHeight - finalHeight) / 2;
+
+      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
+      pdf.save(`Reporte_Bomberos_${log.date}.pdf`);
+
+      showToast('PDF descargado exitosamente', 'success');
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+      showToast('Error al generar PDF: ' + err.message, 'error');
+    } finally {
+      renderArea.style.position = 'absolute';
+      renderArea.style.top = '-99999px';
+      renderArea.style.left = '-99999px';
+      renderArea.style.zIndex = '-99999';
+      renderArea.style.opacity = '0';
+      renderArea.innerHTML = '';
+      
+      isGeneratingPdf = false;
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = '📥 Descargar PDF';
+    }
+  }
+
+  // =============================================================
+  // EDITAR VEHÍCULO
+  // =============================================================
+  function editVehicle() {
+    const v = vehicles.find(v => v.id === selectedVehicleId);
+    if (!v) return;
+    const name = prompt('Nombre de la unidad:', v.name);
+    if (name && name.trim() !== '') v.name = name.trim();
+    const plate = prompt('Placa o código:', v.plate);
+    if (plate && plate.trim() !== '') v.plate = plate.trim();
+    renderVehicles();
+    updateSummary();
+  }
+
+  // =============================================================
+  // INICIALIZACIÓN
+  // =============================================================
+  async function init() {
+    renderVehicles();
+    updateSummary();
+    if (window.lucide) lucide.createIcons();
+    
+    await loadReports();
+    subscribeToReports();
+    
+    if (navigator.onLine) {
+      showToast('Sistema listo - Conectado', 'success');
+    } else {
+      showToast('Modo Offline activo (PWA)', 'warning');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+
+</body>
+</html>
